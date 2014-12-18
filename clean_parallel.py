@@ -41,11 +41,11 @@ def replace_chars(text):
 def check_length(text_f, text_e, args):
     lf = len(text_f.split())
     le = len(text_e.split())
-    r = max(lf/le, le/lf)
     if lf < args.n_min: return False
     if le < args.n_min: return False
     if lf > args.n_max: return False
     if lf > args.n_max: return False
+    r = max(lf/le, le/lf)
     if r > args.ratio: return False
     return True
 
