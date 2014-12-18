@@ -9,6 +9,8 @@ from argparse import ArgumentParser
 
 
 UNHAPPY_CHARS = {
+    '<': '-LT-',
+    '>': '-GT-',
     '(': '-LRB-',
     ')': '-RRB-',
     '{': '-LCB-',
