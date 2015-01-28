@@ -13,6 +13,7 @@ def getargs():
 
 example:
     human_evaluation.py
+        --method sentence
         --src test.fr
         --ref ref1.en ref2.en ref3.en
         --hyp hyp1.en hyp2.en hyp3.en
@@ -23,6 +24,9 @@ example:
         --skip 0
         --num 100
 ''')
+    p.add_argument('--method',
+                   required=True, metavar='STR', type=str, choices=['one', 'sentence'],
+                   help='evaluation method: one | sentence')
     p.add_argument('--src',
                    required=False, metavar='PATH', type=str, default='',
                    help='source corpora')
@@ -89,60 +93,67 @@ def getscore(name, lmin, lmax):
     return ret
 
 
-def main():
-    args = getargs()
-    checkargs(args)
+def separator(c):
+    print()
+    print(c * 64)
 
+
+def get_corpus(args):
     corpus_src = [x.strip() for x in open(args.src)] if args.src else None
     corpus_ref = [[x.strip() for x in open(f)] for f in args.ref]
     corpus_hyp = [[x.strip() for x in open(f)] for f in args.hyp]
 
     N = len(corpus_hyp[0])
-    H = len(corpus_hyp)
-    R = len(corpus_ref)
 
-    for i in range(H):
-        if len(corpus_hyp[i]) != N:
-            raise RuntimeError('corpus size are different')
+    for corpus in [corpus_src] + corpus_ref + corpus_hyp:
+        if len(corpus) != N:
+            raise RuntimeError('corpus sizes are different')
     if args.skip >= N:
         raise RuntimeError('--skip is too large')
 
-    begin = args.skip
-    end = min(N, begin + args.num) if args.num > 0 else N
-    NN = end - begin
+    end = min(N, args.skip + args.num) if args.num > 0 else N
 
-    corpus_src = corpus_src[begin:end] if corpus_src else None
-    corpus_ref = [x[begin:end] for x in corpus_ref]
-    corpus_hyp = [x[begin:end] for x in corpus_hyp]
+    corpus_src = corpus_src[args.skip:end] if corpus_src else None
+    corpus_ref = [x[args.skip:end] for x in corpus_ref]
+    corpus_hyp = [x[args.skip:end] for x in corpus_hyp]
+
+    return corpus_src, corpus_ref, corpus_hyp
+
+
+def eval_one(args):
+    corpus_src, corpus_ref, corpus_hyp = get_corpus(args)
+    N = len(corpus_hyp[0])
+    R = len(corpus_ref)
+    H = len(corpus_hyp)
 
     order = []
     for h in range(H):
-        order += [(h, n) for n in range(NN)]
+        order += [(h, n) for n in range(N)]
     random.shuffle(order)
 
     scores = {}
 
     for i, (h, n) in enumerate(order):
-        print()
-        print('================================================================')
+        separator('=')
+        
         #print('hypothesis %d, sentence %d:' % (k+1, begin+n+1))
         print('[Sample %d]' % (i+1))
-        print()
-        print('----------------------------------------------------------------')
+        separator('-')
+
         if corpus_src:
             print('Source:')
             print(corpus_src[n])
-            print()
-            print('----------------------------------------------------------------')
+            separator('-')
+
         for r in range(R):
             print('Reference %d:' % (r+1))
             print(corpus_ref[r][n])
-            print()
-            print('----------------------------------------------------------------')
+            separator('-')
+
         print('Hypothesis:')
         print(corpus_hyp[h][n])
-        print()
-        print('----------------------------------------------------------------')
+        separator('-')
+
         for name, lmin, lmax in zip(args.measure, args.min_level, args.max_level):
             scores[name, h, n] = getscore(name, lmin, lmax)
 
@@ -154,10 +165,71 @@ def main():
         for name in args.measure:
             print(name + ':', file=fp)
             print('Sentence\t' + '\t'.join(args.hyp), file=fp)
-            for n in range(NN):
-                print(str(begin+n+1) + '\t' + '\t'.join((str(scores[name, h, n]) for h in range(H))), file=fp)
+            for n in range(N):
+                nn = args.skip + n + 1
+                ss = '\t'.join((str(scores[name, h, n]) for h in range(H)))
+                print(str(nn) + '\t' + ss, file=fp)
             print(file=fp)
 
+
+def eval_sentence(args):
+    corpus_src, corpus_ref, corpus_hyp = get_corpus(args)
+    N = len(corpus_hyp[0])
+    R = len(corpus_ref)
+    H = len(corpus_hyp)
+
+    scores = {}
+
+    for n in range(N):
+
+        order = [x for x in range(H)]
+        random.shuffle(order)
+
+        separator('=')
+        
+        #print('hypothesis %d, sentence %d:' % (k+1, begin+n+1))
+        print('[Sample %d]' % (n+1))
+        separator('-')
+
+        if corpus_src:
+            print('Source:')
+            print(corpus_src[n])
+            separator('-')
+
+        for r in range(R):
+            print('Reference %d:' % (r+1))
+            print(corpus_ref[r][n])
+            separator('-')
+
+        for hh, h in enumerate(order):
+            print('Hypothesis %d:' % hh)
+            print(corpus_hyp[h][n])
+            separator('-')
+
+        for hh, h in enumerate(order):
+            for name, lmin, lmax in zip(args.measure, args.min_level, args.max_level):
+                scores[name, h, n] = getscore('Hypothesis %d ' % (hh+1) + name, lmin, lmax)
+
+    print()
+    print('Finish!')
+    print()
+    
+    with open(args.out, 'w') as fp:
+        for name in args.measure:
+            print(name + ':', file=fp)
+            print('Sentence\t' + '\t'.join(args.hyp), file=fp)
+            for n in range(N):
+                nn = args.skip + n + 1
+                ss = '\t'.join((str(scores[name, h, n]) for h in range(H)))
+                print(str(nn) + '\t' + ss, file=fp)
+            print(file=fp)
+def main():
+    args = getargs()
+    checkargs(args)
+
+    if args.method == 'one': eval_one(args)
+    elif args.method == 'sentence': eval_sentence(args)
+    else: raise RuntimeError('unknown evaluation method: ' + args.method)
 
 
 if __name__ == '__main__':
