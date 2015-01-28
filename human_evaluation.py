@@ -202,7 +202,7 @@ def eval_sentence(args):
             separator('-')
 
         for hh, h in enumerate(order):
-            print('Hypothesis %d:' % hh)
+            print('Hypothesis %d:' % (hh+1))
             print(corpus_hyp[h][n])
             separator('-')
 
