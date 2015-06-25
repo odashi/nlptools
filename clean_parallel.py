@@ -69,14 +69,6 @@ def parse_args():
         help='maximum #words per line (default: %d)' % DEFAULT_N_MAX)
     p.add_argument('--ratio', dest='ratio', default=DEFAULT_RATIO, metavar='FLOAT', type=float,
         help='upper bound of the ratio between lengths of parallel sentence (default: %f)' % DEFAULT_RATIO)
-    p.add_argument('--unicode', dest='unicode_normalize', action='store_true', default=True,
-        help='run unicode normalization (default)')
-    p.add_argument('--no-unicode', dest='unicode_normalize', action='store_false',
-        help='never run unicode normalization')
-    p.add_argument('--lowercase', dest='lowercase', action='store_true',
-        help='run lowercasing')
-    p.add_argument('--no-lowercase', dest='lowercase', action='store_false', default=False,
-        help='never run lowercasing (default)')
     
     args = p.parse_args()
     
@@ -109,22 +101,18 @@ def main():
         stored = 0
         ignored = 0
         for text_f, text_e in zip(fp_if, fp_ie):
-            if args.unicode_normalize:
-                text_f = unicodedata.normalize('NFKC', text_f)
-                text_e = unicodedata.normalize('NFKC', text_e)
             text_f = normalize_spaces(text_f)
             text_e = normalize_spaces(text_e)
             text_f = replace_chars(text_f)
             text_e = replace_chars(text_e)
-            if args.lowercase:
-                text_f = text_f.lower()
-                text_e = text_e.lower()
             if check_length(text_f, text_e, args):
                 fp_of.write(text_f + '\n')
                 fp_oe.write(text_e + '\n')
                 stored += 1
             else:
                 ignored += 1
+
+        print("%d stored, %d ignored." % (stored, ignored), file=sys.stderr)
     
 
 if __name__ == '__main__':

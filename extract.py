@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from util import sexpr
+from nltk.tree import Tree
 
 
 LEXTS = {
@@ -11,14 +11,14 @@ LEXTS = {
     'lexicon': lambda x: x[1] + '/' + x[0]
 }
 
-def extract(tree, lext):
-    if len(tree) == 2 and isinstance(tree[1], str):
-        return [lext(tree)]
+def extract(tree):
+    if isinstance(tree[0], str):
+        yield (tree.label(), tree[0])
     else:
-        ret = []
-        for ch in tree[1:] if isinstance(tree[0], str) else tree:
-            ret += extract(ch, lext)
-        return ret
+        for ch in tree:
+            # yield from extract(ch)
+            for ret in extract(ch):
+                yield ret
 
 
 def main():
@@ -35,7 +35,8 @@ def main():
         return
 
     for l in sys.stdin:
-        print(' '.join(extract(sexpr.decode(l), lext)));
+        tree = Tree.fromstring(l)
+        print(' '.join(lext(x) for x in extract(tree)))
 
 
 if __name__ == '__main__':
