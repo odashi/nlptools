@@ -47,7 +47,7 @@ def check_length(text_f, text_e, args):
     if lf < args.n_min: return False
     if le < args.n_min: return False
     if lf > args.n_max: return False
-    if lf > args.n_max: return False
+    if le > args.n_max: return False
     r = max(lf/le, le/lf)
     if r > args.ratio: return False
     return True
