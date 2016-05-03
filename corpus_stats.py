@@ -51,7 +51,7 @@ def main(args):
     print('  max length:     %7d' % max_len)
     print('  average length: %11.3f' % mean)
     print('  SD of length:   %11.3f' % sd)
-    print('  #vocaburaly:    %7d' % len(vocab))
+    print('  #vocabulary:    %7d' % len(vocab))
     print()
 
 if __name__ == '__main__':
