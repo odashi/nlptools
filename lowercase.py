@@ -3,6 +3,11 @@
 
 import sys
 
-for l in sys.stdin:
+if len(sys.argv) < 2:
+  for l in sys.stdin:
     print(l.strip().lower())
+else:
+  for f in sys.argv[1:]:
+    for l in open(f):
+      print(l.strip().lower())
 
