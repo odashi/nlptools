@@ -58,7 +58,7 @@ def parse_args():
     DEFAULT_N_MAX = 80
     DEFAULT_RATIO = 9.0
 
-    p = ArgumentParser(version='0.2 (2014/8/6)')
+    p = ArgumentParser()
 
     p.add_argument('in1', help='input file 1')
     p.add_argument('in2', help='input file 2')
