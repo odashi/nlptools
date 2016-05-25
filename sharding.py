@@ -64,71 +64,76 @@ def main(args):
   in_filedesc_list, in_filename_list = zip(*(tempfile.mkstemp(prefix=prefix + '%04d.' % n) for n in range(args.shard)))
   out_filename_list = [x + '.out' for x in in_filename_list]
 
-  print('making input shards ...')
-  in_shard_fp_list = [os.fdopen(x, 'w') for x in in_filedesc_list]
-  with open(args.input) as in_fp:
-    for n, line in enumerate(in_fp):
-      in_shard_fp_list[n % args.shard].write(line)
-  for fp in in_shard_fp_list:
-    fp.close()
-
-  process_list = []
-  begin_time = datetime.datetime.now()
-
   try:
-    # run command
-    for in_filename, out_filename in zip(in_filename_list, out_filename_list):
-      command = args.command.replace('@IN@', in_filename).replace('@OUT@', out_filename)
-      process = subprocess.Popen(command, shell=True)
-      process_list.append(process)
-    
-    # wait
-    while True:
-      running, succeeded, failed = poll_processes(process_list)
-      elapsed = datetime.datetime.now() - begin_time
-      print('%s: %d running, %d succeeded, %d failed' % \
-        (elapsed, running, succeeded, failed), end='\r')
-      if succeeded + failed == args.shard:
-        break
-      time.sleep(0.2)
+    print('making input shards ...')
+    in_shard_fp_list = [os.fdopen(x, 'w') for x in in_filedesc_list]
+    with open(args.input) as in_fp:
+      for n, line in enumerate(in_fp):
+        in_shard_fp_list[n % args.shard].write(line)
+    for fp in in_shard_fp_list:
+      fp.close()
 
-  except BaseException as ex:
+    process_list = []
+    begin_time = datetime.datetime.now()
+
+    try:
+      # run command
+      for in_filename, out_filename in zip(in_filename_list, out_filename_list):
+        command = args.command.replace('@IN@', in_filename).replace('@OUT@', out_filename)
+        process = subprocess.Popen(command, shell=True)
+        process_list.append(process)
+      
+      # wait
+      while True:
+        running, succeeded, failed = poll_processes(process_list)
+        elapsed = datetime.datetime.now() - begin_time
+        print('%s: %d running, %d succeeded, %d failed' % \
+          (elapsed, running, succeeded, failed), end='\r')
+        if succeeded + failed == args.shard:
+          break
+        time.sleep(0.2)
+
+    except BaseException as ex:
+      print()
+      print('ERROR: %s: %s' % (type(ex).__name__, ex))
+      # terminate all processes
+      for process in process_list:
+        try:
+          process.terminate()
+        except:
+          pass
+      print('all processes terminated.')
+      return
+    
     print()
-    print('ERROR: %s: %s' % (type(ex).__name__, ex))
-    # terminate all processes
-    for process in process_list:
-      try:
-        process.terminate()
-      except:
-        pass
-    print('all processes terminated.')
-    return
-  
-  print()
-  
-  running, succeeded, failed = poll_processes(process_list)
-  if succeeded == args.shard:
-    print('merging results ...')
-    out_shard_fp_list = [open(x) for x in out_filename_list]
-    with open(args.output, 'w') as out_fp:
-      try:
-        n = 0
-        while True:
-          line = next(out_shard_fp_list[n])
+    
+    running, succeeded, failed = poll_processes(process_list)
+    if succeeded == args.shard:
+      print('merging results ...')
+      out_shard_fp_list = [open(x) for x in out_filename_list]
+      with open(args.output, 'w') as out_fp:
+        try:
+          n = 0
+          while True:
+            line = next(out_shard_fp_list[n])
           out_fp.write(line)
           n = (n + 1) % args.shard
-      except StopIteration:
-        pass
-    for fp in out_shard_fp_list:
-      fp.close()
-  else:
-    print('some processes failed.')
+        except StopIteration:
+          pass
+      for fp in out_shard_fp_list:
+        fp.close()
+    else:
+      print('some processes failed.')
+  except BaseException as ex:
+    print('ERROR: %s: %s' % (type(ex).__name__, ex))
 
   print('removing input/output shards ...')
   for fn in in_filename_list:
-    os.remove(fn)
+    if os.path.exists(fn):
+      os.remove(fn)
   for fn in out_filename_list:
-    os.remove(fn)
+    if os.path.exists(fn):
+      os.remove(fn)
 
 if __name__ == '__main__':
   args = parse_args()
