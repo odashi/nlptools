@@ -1,5 +1,14 @@
 #!/usr/bin/python3
 
+'''
+simple usage (100-parallel computation):
+  sharding.py
+    --input in.txt
+    --output out.txt
+    --command 'your-command < @IN@ > @OUT@'
+    --shard 100
+'''
+
 import datetime
 import os
 import subprocess
