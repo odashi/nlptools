@@ -108,7 +108,7 @@ def main(args):
   
   running, succeeded, failed = poll_processes(process_list)
   if succeeded == args.shard:
-    print('merge results ...')
+    print('merging results ...')
     out_shard_fp_list = [open(x) for x in out_filename_list]
     with open(args.output, 'w') as out_fp:
       try:
