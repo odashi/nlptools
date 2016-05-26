@@ -116,8 +116,8 @@ def main(args):
           n = 0
           while True:
             line = next(out_shard_fp_list[n])
-          out_fp.write(line)
-          n = (n + 1) % args.shard
+            out_fp.write(line)
+            n = (n + 1) % args.shard
         except StopIteration:
           pass
       for fp in out_shard_fp_list:
