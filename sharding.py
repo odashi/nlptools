@@ -92,6 +92,7 @@ def main(args):
         if succeeded + failed == args.shard:
           break
         time.sleep(0.2)
+      print()
 
     except BaseException as ex:
       print()
@@ -102,10 +103,7 @@ def main(args):
           process.terminate()
         except:
           pass
-      print('all processes terminated.')
-      return
-    
-    print()
+      print('all processes are terminated.')
     
     running, succeeded, failed = poll_processes(process_list)
     if succeeded == args.shard:
@@ -122,8 +120,6 @@ def main(args):
           pass
       for fp in out_shard_fp_list:
         fp.close()
-    else:
-      print('some processes failed.')
   except BaseException as ex:
     print('ERROR: %s: %s' % (type(ex).__name__, ex))
 
